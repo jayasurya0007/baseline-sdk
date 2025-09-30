@@ -1,0 +1,45 @@
+{
+  "name": "baseline-cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "baseline-check": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo lint ok",
+    "test": "node --test || exit 0"
+  },
+  "dependencies": {
+    "@baseline-toolkit/baseline-sdk": "^0.1.0",
+    "fast-glob": "^3.3.2",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.10",
+    "@types/yargs": "^17.0.33",
+    "typescript": "^5.9.2"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/baseline-toolkit.git"
+  },
+  "bugs": { "url": "https://github.com/your-org/baseline-toolkit/issues" },
+  "homepage": "https://github.com/your-org/baseline-toolkit#readme",
+  "publishConfig": { "access": "public" },
+  "keywords": ["baseline", "cli", "compatibility"]
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "js.array.toSorted",
+    "name": "Array.prototype.toSorted",
+    "status": { "baseline": "newly", "since": "2023" }
+  },
+  {
+    "id": "css.properties.scroll-timeline",
+    "name": "scroll-timeline",
+    "bcdId": "css.properties.scroll-timeline",
+    "status": { "baseline": "limited" }
+  },
+  {
+    "id": "css.properties.aspect-ratio",
+    "name": "aspect-ratio",
+    "bcdId": "css.properties.aspect-ratio",
+    "status": { "baseline": "widely", "since": "2021" }
+  }
+]
+

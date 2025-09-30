@@ -1,0 +1,41 @@
+{
+  "name": "vscode-baseline",
+  "displayName": "Baseline Compatibility",
+  "publisher": "baseline-toolkit",
+  "version": "0.1.0",
+  "engines": { "vscode": "^1.80.0" },
+  "categories": ["Linters"],
+  "activationEvents": ["onStartupFinished", "onLanguage:javascript", "onLanguage:typescript", "onLanguage:css"],
+  "main": "dist/extension.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/baseline-toolkit.git"
+  },
+  "bugs": { "url": "https://github.com/your-org/baseline-toolkit/issues" },
+  "homepage": "https://github.com/your-org/baseline-toolkit#readme",
+  "contributes": {
+    "configuration": {
+      "title": "Baseline",
+      "properties": {
+        "baseline.target": {
+          "type": "string",
+          "enum": ["limited", "newly", "widely"],
+          "default": "widely",
+          "description": "Required Baseline target"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.92.0",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@baseline-toolkit/baseline-sdk": "^0.1.0"
+  }
+}
+

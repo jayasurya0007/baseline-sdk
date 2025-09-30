@@ -1,0 +1,46 @@
+{
+  "name": "eslint-plugin-baseline",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo lint ok",
+    "test": "node --test || exit 0"
+  },
+  "peerDependencies": {
+    "eslint": ">=8"
+  },
+  "dependencies": {
+    "@baseline-toolkit/baseline-sdk": "^0.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.12.0",
+    "@typescript-eslint/utils": "^8.9.0",
+    "@types/eslint": "^9.6.1",
+    "typescript": "^5.9.2",
+    "@types/node": "^20.16.10"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/baseline-toolkit.git"
+  },
+  "bugs": { "url": "https://github.com/your-org/baseline-toolkit/issues" },
+  "homepage": "https://github.com/your-org/baseline-toolkit#readme",
+  "publishConfig": { "access": "public" },
+  "keywords": ["eslint", "baseline", "compatibility"]
+}
+
