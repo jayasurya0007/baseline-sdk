@@ -10,6 +10,13 @@
     "lint": "npm -ws run lint",
     "test": "npm -ws run test"
   },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jayasurya0007/baseline-sdk.git"
+  },
+  "bugs": { "url": "https://github.com/jayasurya0007/baseline-sdk/issues" },
+  "homepage": "https://github.com/jayasurya0007/baseline-sdk#readme",
   "devDependencies": {
     "@types/node": "^22.7.5",
     "typescript": "^5.6.3"

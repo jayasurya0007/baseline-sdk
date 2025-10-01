@@ -32,10 +32,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/baseline-toolkit.git"
+    "url": "git+https://github.com/jayasurya0007/baseline-sdk.git"
   },
-  "bugs": { "url": "https://github.com/your-org/baseline-toolkit/issues" },
-  "homepage": "https://github.com/your-org/baseline-toolkit#readme",
+  "bugs": { "url": "https://github.com/jayasurya0007/baseline-sdk/issues" },
+  "homepage": "https://github.com/jayasurya0007/baseline-sdk#readme",
   "publishConfig": { "access": "public" },
   "keywords": ["baseline", "mdn", "compatibility", "web-features", "sdk"]
 }
