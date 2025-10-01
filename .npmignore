@@ -1,0 +1,10 @@
+node_modules/
+src/
+*.ts
+tsconfig*.json
+.git/
+.vscode/
+coverage/
+.nyc_output/
+*.log
+.env*
