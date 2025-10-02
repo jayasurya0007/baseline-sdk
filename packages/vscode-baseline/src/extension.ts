@@ -33,21 +33,43 @@ class InMemoryDataSource {
   getFeatureByBcdId(bcdId: string) { return this.byBcd.get(bcdId); }
 }
 
-const features: BaselineFeature[] = [
-  {
-    id: "js.array.toSorted",
-    name: "Array.prototype.toSorted",
-    status: { baseline: "newly", since: "2023-07" }
-  },
-  {
-    id: "css.properties.scroll-timeline",
-    name: "CSS scroll-timeline",
-    bcdId: "css.properties.scroll-timeline",
-    status: { baseline: "limited" }
-  }
-];
+// Initialize with full web-features dataset
+let dataSource: InMemoryDataSource;
 
-const dataSource = new InMemoryDataSource(features);
+// Load web-features data asynchronously
+async function initializeDataSource(): Promise<void> {
+  try {
+    // Dynamically import to load the full web-features dataset
+    const mod = await import('web-features');
+    const records: BaselineFeature[] = [];
+    const entries = (mod as any).features || (mod as any).default || {};
+    
+    for (const [id, feat] of Object.entries(entries as Record<string, any>)) {
+      const baseline = (feat as any).status?.baseline === 'high' ? 'widely' : 
+                      (feat as any).status?.baseline === 'low' ? 'newly' : 'limited';
+      const since = (feat as any).status?.baseline_high_date || (feat as any).status?.baseline_low_date;
+      const bcdId = Array.isArray((feat as any).bcd) ? (feat as any).bcd[0] : (feat as any).bcd;
+      
+      records.push({
+        id,
+        name: (feat as any).name || id,
+        status: { baseline: baseline as BaselineLevel, since: since || undefined },
+        bcdId: bcdId
+      });
+    }
+    
+    dataSource = new InMemoryDataSource(records);
+    console.log(`🎯 VSCode extension loaded ${records.length} web features from MDN dataset`);
+  } catch (error) {
+    // Fallback to basic features if web-features import fails
+    console.warn('⚠️ VSCode extension: Could not load web-features, using fallback');
+    const fallbackFeatures: BaselineFeature[] = [
+      { id: "array-by-copy", name: "Array by copy methods", status: { baseline: "newly", since: "2023-07" } },
+      { id: "optional-chaining", name: "Optional chaining (?.)", status: { baseline: "widely", since: "2020-04" } }
+    ];
+    dataSource = new InMemoryDataSource(fallbackFeatures);
+  }
+}
 
 function isSupported(featureId: string, target: BaselineLevel): boolean {
   const rec = dataSource.getFeatureById(featureId);
@@ -58,6 +80,13 @@ function isSupported(featureId: string, target: BaselineLevel): boolean {
 export function activate(context: vscode.ExtensionContext) {
 	const diagnosticCollection = vscode.languages.createDiagnosticCollection('baseline');
 	context.subscriptions.push(diagnosticCollection);
+
+	// Initialize the full web-features dataset
+	initializeDataSource().then(() => {
+		console.log('🚀 VSCode Baseline extension ready with full web-features dataset');
+	}).catch(err => {
+		console.error('❌ Failed to initialize VSCode Baseline extension:', err);
+	});
 
 	async function refreshDiagnostics(doc: vscode.TextDocument) {
 		if (!['javascript', 'typescript', 'javascriptreact', 'typescriptreact', 'css'].includes(doc.languageId)) return;

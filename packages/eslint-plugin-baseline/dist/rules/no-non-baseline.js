@@ -19,30 +19,42 @@ class InMemoryDataSource {
     getFeatureByName(name) { return this.byName.get(name); }
     getFeatureByBcdId(bcdId) { return this.byBcd.get(bcdId); }
 }
-const features = [
-    // Array methods
-    { id: "array-by-copy", name: "Array by copy methods", status: { baseline: "newly", since: "2023-07" } },
-    { id: "array-at", name: "Array.prototype.at", status: { baseline: "newly", since: "2022-03" } },
-    { id: "array-findlast", name: "Array findLast methods", status: { baseline: "newly", since: "2022-09" } },
-    // Promise methods
-    { id: "promise-allsettled", name: "Promise.allSettled", status: { baseline: "newly", since: "2020-08" } },
-    { id: "promise-any", name: "Promise.any", status: { baseline: "newly", since: "2021-08" } },
-    // Modern JavaScript syntax
-    { id: "optional-chaining", name: "Optional chaining (?.)", status: { baseline: "widely", since: "2020-04" } },
-    { id: "nullish-coalescing", name: "Nullish coalescing (??)", status: { baseline: "widely", since: "2020-04" } },
-    { id: "logical-assignment", name: "Logical assignment operators", status: { baseline: "newly", since: "2021-08" } },
-    // Object methods
-    { id: "object-hasown", name: "Object.hasOwn", status: { baseline: "newly", since: "2022-03" } },
-    { id: "object-fromentries", name: "Object.fromEntries", status: { baseline: "widely", since: "2019-07" } },
-    // String methods
-    { id: "string-replaceall", name: "String.prototype.replaceAll", status: { baseline: "newly", since: "2021-08" } },
-    { id: "string-matchall", name: "String.prototype.matchAll", status: { baseline: "widely", since: "2020-07" } },
-    // Web APIs
-    { id: "abortcontroller", name: "AbortController", status: { baseline: "widely", since: "2022-03" } },
-    { id: "dynamic-import", name: "Dynamic import()", status: { baseline: "widely", since: "2020-07" } },
-    { id: "bigint", name: "BigInt", status: { baseline: "widely", since: "2020-07" } }
-];
-const dataSource = new InMemoryDataSource(features);
+// Initialize with full web-features dataset
+let dataSource;
+// Synchronously load web-features data (this will be called once when the plugin loads)
+function initializeDataSource() {
+    try {
+        // Use require for synchronous loading in ESLint context
+        const webFeatures = require('web-features');
+        const records = [];
+        const entries = webFeatures.features || webFeatures.default || webFeatures;
+        for (const [id, feat] of Object.entries(entries)) {
+            const baseline = feat.status?.baseline === 'high' ? 'widely' :
+                feat.status?.baseline === 'low' ? 'newly' : 'limited';
+            const since = feat.status?.baseline_high_date || feat.status?.baseline_low_date;
+            const bcdId = Array.isArray(feat.bcd) ? feat.bcd[0] : feat.bcd;
+            records.push({
+                id,
+                name: feat.name || id,
+                status: { baseline: baseline, since: since || undefined },
+                bcdId: bcdId
+            });
+        }
+        dataSource = new InMemoryDataSource(records);
+        console.log(`🎯 ESLint plugin loaded ${records.length} web features from MDN dataset`);
+    }
+    catch (error) {
+        // Fallback to basic features if web-features import fails
+        console.warn('⚠️ ESLint plugin: Could not load web-features, using fallback');
+        const fallbackFeatures = [
+            { id: "array-by-copy", name: "Array by copy methods", status: { baseline: "newly", since: "2023-07" } },
+            { id: "optional-chaining", name: "Optional chaining (?.)", status: { baseline: "widely", since: "2020-04" } }
+        ];
+        dataSource = new InMemoryDataSource(fallbackFeatures);
+    }
+}
+// Initialize data source when module loads
+initializeDataSource();
 function isSupported(featureId, target) {
     const rec = dataSource.getFeatureById(featureId);
     if (!rec)

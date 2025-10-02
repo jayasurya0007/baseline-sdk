@@ -165,4 +165,30 @@ export function createDefaultSdk() {
     const ds = new InMemoryDataSource(features);
     return createSdk(ds);
 }
+// Function to map web-features data to our internal format
+function mapWebFeatureToRecord(id, feat) {
+    const baseline = feat.status?.baseline === 'high' ? 'widely' : feat.status?.baseline === 'low' ? 'newly' : 'limited';
+    const since = feat.status?.baseline_high_date || feat.status?.baseline_low_date;
+    const bcdId = Array.isArray(feat.bcd) ? feat.bcd[0] : feat.bcd;
+    return {
+        id,
+        name: feat.name || id,
+        status: { baseline: baseline, since: since || undefined },
+        bcdId: bcdId
+    };
+}
+export async function createWebFeaturesSdk() {
+    // Dynamically import to load the full web-features dataset
+    const mod = await import('web-features');
+    const records = [];
+    const entries = mod.features || mod.default || {};
+    for (const [id, feat] of Object.entries(entries)) {
+        const rec = mapWebFeatureToRecord(id, feat);
+        if (rec)
+            records.push(rec);
+    }
+    console.log(`📊 Loaded ${records.length} web features from MDN dataset`);
+    const ds = new InMemoryDataSource(records);
+    return createSdk(ds);
+}
 //# sourceMappingURL=sdk-inline.js.map

@@ -42,4 +42,5 @@ export declare class InMemoryDataSource implements BaselineDataSource {
 }
 export declare function createSdk(dataSource: BaselineDataSource): BaselineSdk;
 export declare function createDefaultSdk(): BaselineSdk;
+export declare function createWebFeaturesSdk(): Promise<BaselineSdk>;
 //# sourceMappingURL=sdk-inline.d.ts.map

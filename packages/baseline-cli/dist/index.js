@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { createDefaultSdk } from './sdk-inline.js';
+import { createWebFeaturesSdk } from './sdk-inline.js';
 async function main() {
     const argv = await yargs(hideBin(process.argv))
         .scriptName('baseline-check')
@@ -17,8 +17,9 @@ async function main() {
         .parse();
     const target = argv.target ?? 'widely';
     const dir = argv._[0] || '.';
-    // Use the inline SDK for CLI to avoid external dependencies but get comprehensive detection
-    const sdk = createDefaultSdk();
+    // Use the full web-features dataset for comprehensive detection (1000+ features!)
+    console.log('🔍 Loading comprehensive web features dataset...');
+    const sdk = await createWebFeaturesSdk();
     const defaultIgnores = [
         '**/node_modules/**',
         '**/dist/**',

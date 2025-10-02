@@ -91,15 +91,20 @@ export function createSdk(dataSource: BaselineDataSource): BaselineSdk {
 
 export default createSdk;
 
-export function createDefaultSdk(target: BaselineLevel = 'widely'): BaselineSdk {
-  // Use sample data for quick testing, but recommend createWebFeaturesSdk() for full coverage
+export async function createDefaultSdk(target: BaselineLevel = 'widely'): Promise<BaselineSdk> {
+  // Now uses the complete web-features dataset by default for maximum coverage!
+  return createWebFeaturesSdk();
+}
+
+export function createLegacySdk(target: BaselineLevel = 'widely'): BaselineSdk {
+  // Legacy function that uses the original 3 sample features for quick testing
   const ds = new InMemoryDataSource(features as any[]);
   return createSdk(ds);
 }
 
 export function createFullFeaturesDefaultSdk(target: BaselineLevel = 'widely'): Promise<BaselineSdk> {
-  // Use the complete web-features dataset for comprehensive coverage
-  return createWebFeaturesSdk();
+  // Alias for createDefaultSdk() - now they're the same!
+  return createDefaultSdk(target);
 }
 
 export async function createWebFeaturesSdk(): Promise<BaselineSdk> {

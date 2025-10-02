@@ -1,0 +1,96 @@
+/* Ultimate CSS test file with diverse modern features */
+.container {
+  /* Layout systems */
+  display: grid;
+  display: flex;
+  display: contents;
+  
+  /* Grid and Flexbox */
+  gap: 1rem;
+  grid-template-areas: "header header" "sidebar main";
+  align-items: center;
+  justify-content: space-between;
+  
+  /* Modern properties */
+  aspect-ratio: 16/9;
+  accent-color: blue;
+  backdrop-filter: blur(10px);
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+  scroll-timeline: auto;
+  
+  /* Container queries */
+  container-type: inline-size;
+  container-name: sidebar;
+  
+  /* Logical properties */
+  inline-size: 100%;
+  block-size: 50vh;
+  margin-inline: auto;
+  padding-block: 1rem;
+  
+  /* Color functions */
+  color: oklch(0.7 0.15 180);
+  background: color-mix(in srgb, red 50%, blue);
+  border-color: lab(50% 20 -30);
+  
+  /* View transitions */
+  view-transition-name: slide;
+}
+
+@container sidebar (min-width: 300px) {
+  .item {
+    font-size: 1.2rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .theme {
+    color-scheme: dark;
+  }
+}
+
+/* CSS Nesting */
+.parent {
+  color: blue;
+  
+  & .child {
+    color: red;
+    
+    &:hover {
+      color: green;
+    }
+  }
+  
+  &:has(.special) {
+    border: 2px solid orange;
+  }
+}
+
+/* Advanced selectors */
+.selector:has(.child) {
+  transform: translateX(10px);
+}
+
+.item:where(.active, .focused) {
+  outline: 2px solid blue;
+}
+
+.element:is(.primary, .secondary) {
+  font-weight: bold;
+}
+
+/* Modern at-rules */
+@supports (display: grid) {
+  .grid-container {
+    display: grid;
+  }
+}
+
+@layer base, components, utilities;
+
+@layer components {
+  .button {
+    padding: 0.5rem 1rem;
+  }
+}

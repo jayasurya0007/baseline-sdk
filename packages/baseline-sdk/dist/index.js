@@ -82,14 +82,18 @@ export function createSdk(dataSource) {
     };
 }
 export default createSdk;
-export function createDefaultSdk(target = 'widely') {
-    // Use sample data for quick testing, but recommend createWebFeaturesSdk() for full coverage
+export async function createDefaultSdk(target = 'widely') {
+    // Now uses the complete web-features dataset by default for maximum coverage!
+    return createWebFeaturesSdk();
+}
+export function createLegacySdk(target = 'widely') {
+    // Legacy function that uses the original 3 sample features for quick testing
     const ds = new InMemoryDataSource(features);
     return createSdk(ds);
 }
 export function createFullFeaturesDefaultSdk(target = 'widely') {
-    // Use the complete web-features dataset for comprehensive coverage
-    return createWebFeaturesSdk();
+    // Alias for createDefaultSdk() - now they're the same!
+    return createDefaultSdk(target);
 }
 export async function createWebFeaturesSdk() {
     // Dynamically import to avoid bundling for users who don't need it
