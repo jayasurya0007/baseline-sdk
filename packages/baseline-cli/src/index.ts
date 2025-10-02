@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { createDefaultSdk } from '@baseline-toolkit/baseline-sdk';
+import { createDefaultSdk } from './sdk-inline.js';
 
 type BaselineLevel = 'limited' | 'newly' | 'widely';
 
@@ -21,7 +21,7 @@ async function main() {
 
   const target = (argv.target as BaselineLevel) ?? 'widely';
   const dir = (argv._[0] as string) || '.';
-  const sdk = createDefaultSdk(target);
+  const sdk = createDefaultSdk();
 
   const defaultIgnores = [
     '**/node_modules/**',

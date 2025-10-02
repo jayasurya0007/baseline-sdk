@@ -1,5 +1,5 @@
 {
-  "name": "baseline-cli",
+  "name": "baseline-toolkit-cli",
   "version": "0.1.0",
   "type": "module",
   "bin": {
@@ -19,8 +19,9 @@
     "test": "node --test || exit 0"
   },
   "dependencies": {
-    "@baseline-toolkit/baseline-sdk": "^0.1.0",
+    "@babel/parser": "^7.28.4",
     "fast-glob": "^3.3.2",
+    "postcss": "^8.5.6",
     "yargs": "^17.7.2"
   },
   "devDependencies": {

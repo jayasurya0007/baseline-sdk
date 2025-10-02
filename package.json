@@ -1,12 +1,16 @@
 {
   "name": "baseline-toolkit",
-  "version": "0.1.0",
-  "description": "A comprehensive toolkit for baseline project development and utilities",
+  "version": "0.1.2",
+  "description": "Complete toolkit for MDN Baseline compatibility checking - includes SDK, CLI, and ESLint plugin",
   "keywords": [
     "baseline",
-    "toolkit",
-    "utilities",
-    "development"
+    "mdn",
+    "compatibility",
+    "web-features",
+    "sdk",
+    "cli",
+    "eslint-plugin",
+    "browser-support"
   ],
   "homepage": "https://github.com/jayasurya0007/baseline-sdk#readme",
   "bugs": {
@@ -18,8 +22,26 @@
   },
   "license": "MIT",
   "author": "jayasuryar849@gmail.com",
-  "type": "commonjs",
-  "main": "index.js",
+  "type": "module",
+  "main": "packages/baseline-sdk/dist/index.js",
+  "types": "packages/baseline-sdk/dist/index.d.ts",
+  "bin": {
+    "baseline-check": "packages/baseline-cli/dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./packages/baseline-sdk/dist/index.js",
+      "types": "./packages/baseline-sdk/dist/index.d.ts"
+    },
+    "./cli": {
+      "import": "./packages/baseline-cli/dist/index.js",
+      "types": "./packages/baseline-cli/dist/index.d.ts"
+    },
+    "./eslint-plugin": {
+      "import": "./packages/eslint-plugin-baseline/dist/index.js",
+      "types": "./packages/eslint-plugin-baseline/dist/index.d.ts"
+    }
+  },
   "workspaces": [
     "packages/*"
   ],
@@ -29,6 +51,7 @@
     "test": "npm -ws run test"
   },
   "dependencies": {
+    "@babel/parser": "^7.28.4",
     "acorn": "^8.15.0",
     "acorn-jsx": "^5.3.2",
     "ajv": "^6.12.6",
@@ -36,7 +59,6 @@
     "ansi-styles": "^4.3.0",
     "argparse": "^2.0.1",
     "balanced-match": "^1.0.2",
-    "baseline-cli": "^0.1.0",
     "brace-expansion": "^2.0.2",
     "braces": "^3.0.3",
     "callsites": "^3.1.0",
@@ -52,7 +74,6 @@
     "escalade": "^3.2.0",
     "escape-string-regexp": "^4.0.0",
     "eslint": "^9.36.0",
-    "eslint-plugin-baseline": "^0.1.0",
     "eslint-scope": "^8.4.0",
     "eslint-visitor-keys": "^3.4.3",
     "espree": "^10.4.0",
@@ -125,7 +146,6 @@
     "type-check": "^0.4.0",
     "undici-types": "^6.21.0",
     "uri-js": "^4.4.1",
-    "vscode-baseline": "^0.1.0",
     "web-features": "^2.49.0",
     "which": "^2.0.2",
     "word-wrap": "^1.2.5",
@@ -137,6 +157,9 @@
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
+    "@types/yargs": "^17.0.33",
+    "@types/eslint": "^9.6.1",
+    "@typescript-eslint/utils": "^8.9.0",
     "typescript": "^5.6.3"
   }
   ,"files": [

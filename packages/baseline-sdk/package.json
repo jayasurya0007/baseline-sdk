@@ -1,5 +1,5 @@
 {
-  "name": "@baseline-toolkit/baseline-sdk",
+  "name": "baseline-toolkit-sdk",
   "version": "0.1.0",
   "type": "module",
   "main": "dist/index.js",
