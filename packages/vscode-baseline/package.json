@@ -1,18 +1,29 @@
 {
-  "name": "@baseline-toolkit/vscode-extension",
+  "name": "baseline-compatibility",
   "displayName": "Baseline Compatibility",
   "publisher": "baseline-toolkit",
   "version": "0.1.0",
-  "engines": { "vscode": "^1.80.0" },
-  "categories": ["Linters"],
-  "activationEvents": ["onStartupFinished", "onLanguage:javascript", "onLanguage:typescript", "onLanguage:css"],
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:css"
+  ],
   "main": "dist/extension.js",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jayasurya0007/baseline-sdk.git"
   },
-  "bugs": { "url": "https://github.com/jayasurya0007/baseline-sdk/issues" },
+  "bugs": {
+    "url": "https://github.com/jayasurya0007/baseline-sdk/issues"
+  },
   "homepage": "https://github.com/jayasurya0007/baseline-sdk#readme",
   "contributes": {
     "configuration": {
@@ -20,7 +31,11 @@
       "properties": {
         "baseline.target": {
           "type": "string",
-          "enum": ["limited", "newly", "widely"],
+          "enum": [
+            "limited",
+            "newly",
+            "widely"
+          ],
           "default": "widely",
           "description": "Required Baseline target"
         }
@@ -31,6 +46,9 @@
     "build": "tsc -p tsconfig.json"
   },
   "devDependencies": {
+    "@babel/parser": "^7.28.4",
+    "@babel/traverse": "^7.28.4",
+    "@babel/types": "^7.28.4",
     "@types/vscode": "^1.92.0",
     "typescript": "^5.9.2"
   },
@@ -38,4 +56,3 @@
     "web-features": "^2.49.0"
   }
 }
-
