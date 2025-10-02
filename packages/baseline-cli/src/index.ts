@@ -21,6 +21,7 @@ async function main() {
 
   const target = (argv.target as BaselineLevel) ?? 'widely';
   const dir = (argv._[0] as string) || '.';
+  // Use the inline SDK for CLI to avoid external dependencies but get comprehensive detection
   const sdk = createDefaultSdk();
 
   const defaultIgnores = [

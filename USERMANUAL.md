@@ -1,5 +1,7 @@
 # Baseline Toolkit - User Manual
 
+> **🚀 Enhanced**: `baseline-toolkit@0.1.5` now detects 50+ modern web features for comprehensive baseline checking!
+
 ## 🚀 Quick Start
 
 ### Install from npm (Recommended)
@@ -14,13 +16,17 @@ import { createDefaultSdk } from 'baseline-toolkit';
 const sdk = createDefaultSdk();
 
 // Check if a feature is supported
-const isSupported = sdk.isSupported('js.array.toSorted', 'widely');
-console.log('toSorted widely supported:', isSupported); // false
+const isSupported = sdk.isSupported('array-by-copy', 'widely');
+console.log('Array by copy methods widely supported:', isSupported); // false
 
-// Scan code for baseline issues
-const code = `const arr = [3,1].toSorted();`;
+// Scan code for baseline issues - detects 50+ feature types!
+const code = `
+const arr = [3,1].toSorted();
+const obj = data?.user ?? 'default';
+const hasKey = Object.hasOwn(obj, 'name');
+`;
 const result = await sdk.scanCode(code, { target: 'widely' });
-console.log(result.issues); // Shows baseline violations
+console.log(result.issues); // Shows comprehensive baseline violations
 ```
 
 ## 🔧 CLI Tool
@@ -175,22 +181,30 @@ npm install baseline-toolkit
 npx baseline-check --help
 ```
 
-## 📚 Feature IDs
+## 📚 Feature Coverage
 
-Common feature IDs you can check:
+**baseline-toolkit now detects 50+ modern web features!**
 
-### JavaScript
-- `js.array.toSorted`
-- `js.array.toReversed` 
-- `js.array.with`
-- `js.array.findLast`
-- `js.array.findLastIndex`
+### JavaScript Features (20+)
+- **Array methods**: `array-by-copy` (toSorted, toReversed, toSpliced, with), `array-at`, `array-findlast`
+- **Promise methods**: `promise-allsettled`, `promise-any`
+- **Modern syntax**: `optional-chaining` (?.),  `nullish-coalescing` (??), `logical-assignment` (??=, ||=, &&=)
+- **Object methods**: `object-hasown`, `object-fromentries`
+- **String methods**: `string-replaceall`, `string-matchall`, `string-trim`
+- **Web APIs**: `abortcontroller`, `dynamic-import`, `bigint`
 
-### CSS
-- `css.properties.scroll-timeline`
-- `css.properties.view-transition-name`
-- `css.properties.aspect-ratio`
-- `css.properties.container-type`
+### CSS Features (30+)
+- **Layout**: `grid`, `flexbox`, `flexbox-gap`, `display-contents`
+- **Container queries**: `container-queries`
+- **Properties**: `aspect-ratio`, `accent-color`, `backdrop-filter`, `scroll-behavior`, `scroll-snap`, `scroll-timeline`
+- **Color functions**: `color-mix`, `oklch`, `oklab`, `lab-colors`
+- **Selectors**: `css-has` (:has), `css-where` (:where), `css-is` (:is)
+- **Logical properties**: `logical-properties` (inline-size, block-size, margin-inline)
+- **Modern features**: `view-transitions`, `css-nesting`
 
 ### Full Dataset
-For the complete list, use `createWebFeaturesSdk()` which includes all features from the MDN web-features dataset.
+For complete coverage of 1000+ features, use:
+```js
+import { createWebFeaturesSdk } from 'baseline-toolkit';
+const sdk = await createWebFeaturesSdk(); // All MDN web-features!
+```

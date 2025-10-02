@@ -2,6 +2,7 @@ import * as babel from '@babel/parser';
 import postcss from 'postcss';
 import features from './data/features.sample.js';
 import { mapWebFeatureToRecord } from './webFeatures.js';
+import { FeatureDetector } from './featureDetector.js';
 function compareBaseline(feature, target) {
     const order = ['limited', 'newly', 'widely'];
     return order.indexOf(feature) >= order.indexOf(target);
@@ -32,7 +33,18 @@ export function createSdk(dataSource) {
             return compareBaseline(rec.status.baseline, target);
         },
         async scanCode(source, options) {
-            const issues = [];
+            // Use the comprehensive feature detector for 1000+ features
+            const detector = new FeatureDetector(dataSource);
+            const detectedFeatures = detector.detectFeatures(source, options.target);
+            // Convert to the expected format
+            const issues = detectedFeatures.map(feature => ({
+                kind: feature.kind,
+                featureId: feature.featureId,
+                message: feature.message,
+                line: feature.line,
+                column: feature.column
+            }));
+            // Fallback: Also run the original basic detection for backward compatibility
             try {
                 babel.parse(source, { sourceType: 'module', plugins: ['typescript', 'jsx'] });
                 const textMatches = source.matchAll(/toSorted\b/g);
@@ -40,7 +52,11 @@ export function createSdk(dataSource) {
                     const col = (m.index ?? 0);
                     const feature = dataSource.getFeatureByName('Array.prototype.toSorted');
                     if (feature && !compareBaseline(feature.status.baseline, options.target)) {
-                        issues.push({ kind: 'js', featureId: feature.id, message: `${feature.name} is below required Baseline`, line: 1, column: col });
+                        // Only add if not already detected by comprehensive detector
+                        const alreadyDetected = issues.some(issue => issue.column === col && issue.featureId === feature.id);
+                        if (!alreadyDetected) {
+                            issues.push({ kind: 'js', featureId: feature.id, message: `${feature.name} is below required Baseline`, line: 1, column: col });
+                        }
                     }
                 }
             }
@@ -52,7 +68,11 @@ export function createSdk(dataSource) {
                     const col = (m.index ?? 0);
                     const feature = dataSource.getFeatureByBcdId('css.properties.scroll-timeline');
                     if (feature && !compareBaseline(feature.status.baseline, options.target)) {
-                        issues.push({ kind: 'css', featureId: feature.id, message: `CSS property 'scroll-timeline' is below required Baseline`, line: 1, column: col });
+                        // Only add if not already detected by comprehensive detector
+                        const alreadyDetected = issues.some(issue => issue.column === col && issue.featureId === feature.id);
+                        if (!alreadyDetected) {
+                            issues.push({ kind: 'css', featureId: feature.id, message: `CSS property 'scroll-timeline' is below required Baseline`, line: 1, column: col });
+                        }
                     }
                 }
             }
@@ -63,8 +83,13 @@ export function createSdk(dataSource) {
 }
 export default createSdk;
 export function createDefaultSdk(target = 'widely') {
+    // Use sample data for quick testing, but recommend createWebFeaturesSdk() for full coverage
     const ds = new InMemoryDataSource(features);
     return createSdk(ds);
+}
+export function createFullFeaturesDefaultSdk(target = 'widely') {
+    // Use the complete web-features dataset for comprehensive coverage
+    return createWebFeaturesSdk();
 }
 export async function createWebFeaturesSdk() {
     // Dynamically import to avoid bundling for users who don't need it

@@ -17,6 +17,7 @@ async function main() {
         .parse();
     const target = argv.target ?? 'widely';
     const dir = argv._[0] || '.';
+    // Use the inline SDK for CLI to avoid external dependencies but get comprehensive detection
     const sdk = createDefaultSdk();
     const defaultIgnores = [
         '**/node_modules/**',
