@@ -1,7 +1,5 @@
 # Baseline Toolkit - User Manual
 
-> **✅ Updated**: The npm package `baseline-toolkit@0.1.4` is now fully functional!
-
 ## 🚀 Quick Start
 
 ### Install from npm (Recommended)
