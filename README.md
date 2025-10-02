@@ -3,18 +3,18 @@
 Baseline Compatibility Toolkit is a full‑stack toolchain to integrate MDN Baseline data into your everyday workflow. It consists of:
 
 - @baseline-toolkit/baseline-sdk: Core SDK to check features and scan code
-- eslint-plugin-baseline: ESLint rules to prevent non‑Baseline features
-- baseline-cli: CI/terminal scanner for projects
-- vscode-baseline: VS Code extension for diagnostics and hovers
+- @baseline-toolkit/eslint-plugin: ESLint rules to prevent non‑Baseline features
+- @baseline-toolkit/baseline-cli: CI/terminal scanner for projects
+- @baseline-toolkit/vscode-extension: VS Code extension for diagnostics and hovers
 
 ### Monorepo layout
 
 ```
 packages/
-  baseline-sdk/
-  eslint-plugin-baseline/
-  baseline-cli/
-  vscode-baseline/
+  baseline-sdk/     (@baseline-toolkit/baseline-sdk)
+  eslint-plugin-baseline/  (@baseline-toolkit/eslint-plugin)
+  baseline-cli/     (@baseline-toolkit/baseline-cli)
+  vscode-baseline/  (@baseline-toolkit/vscode-extension)
 ```
 
 ### Quick start
@@ -38,9 +38,9 @@ Add to your ESLint config:
 
 ```json
 {
-  "plugins": ["baseline"],
+  "plugins": ["@baseline-toolkit/eslint-plugin"],
   "rules": {
-    "baseline/no-non-baseline": "error"
+    "@baseline-toolkit/eslint-plugin/no-non-baseline": "error"
   }
 }
 ```

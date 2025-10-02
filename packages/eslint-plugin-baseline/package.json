@@ -1,5 +1,5 @@
 {
-  "name": "eslint-plugin-baseline-toolkit",
+  "name": "@baseline-toolkit/eslint-plugin",
   "version": "0.1.0",
   "type": "module",
   "main": "dist/index.js",
@@ -19,7 +19,7 @@
     "eslint": ">=8"
   },
   "dependencies": {
-    "baseline-toolkit-sdk": "^0.1.0"
+    "@baseline-toolkit/baseline-sdk": "^0.1.0"
   },
   "devDependencies": {
     "eslint": "^9.12.0",
