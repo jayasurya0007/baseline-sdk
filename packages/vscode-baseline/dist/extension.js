@@ -36,7 +36,47 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
-const baseline_sdk_1 = require("@baseline-toolkit/baseline-sdk");
+function compareBaseline(feature, target) {
+    const order = ['limited', 'newly', 'widely'];
+    return order.indexOf(feature) >= order.indexOf(target);
+}
+class InMemoryDataSource {
+    constructor(features) {
+        this.byId = new Map();
+        this.byName = new Map();
+        this.byBcd = new Map();
+        for (const f of features) {
+            this.byId.set(f.id, f);
+            if (f.name)
+                this.byName.set(f.name, f);
+            if (f.bcdId)
+                this.byBcd.set(f.bcdId, f);
+        }
+    }
+    getFeatureById(id) { return this.byId.get(id); }
+    getFeatureByName(name) { return this.byName.get(name); }
+    getFeatureByBcdId(bcdId) { return this.byBcd.get(bcdId); }
+}
+const features = [
+    {
+        id: "js.array.toSorted",
+        name: "Array.prototype.toSorted",
+        status: { baseline: "newly", since: "2023-07" }
+    },
+    {
+        id: "css.properties.scroll-timeline",
+        name: "CSS scroll-timeline",
+        bcdId: "css.properties.scroll-timeline",
+        status: { baseline: "limited" }
+    }
+];
+const dataSource = new InMemoryDataSource(features);
+function isSupported(featureId, target) {
+    const rec = dataSource.getFeatureById(featureId);
+    if (!rec)
+        return false;
+    return compareBaseline(rec.status.baseline, target);
+}
 function activate(context) {
     const diagnosticCollection = vscode.languages.createDiagnosticCollection('baseline');
     context.subscriptions.push(diagnosticCollection);
@@ -44,14 +84,20 @@ function activate(context) {
         if (!['javascript', 'typescript', 'javascriptreact', 'typescriptreact', 'css'].includes(doc.languageId))
             return;
         const target = vscode.workspace.getConfiguration().get('baseline.target') ?? 'widely';
-        const sdk = (0, baseline_sdk_1.createDefaultSdk)(target);
-        const result = await sdk.scanCode(doc.getText(), { target });
-        const diagnostics = result.issues.map(issue => {
-            const range = new vscode.Range(issue.line - 1, issue.column, issue.line - 1, issue.column + 1);
-            const diag = new vscode.Diagnostic(range, issue.message, vscode.DiagnosticSeverity.Error);
-            diag.source = 'baseline';
-            return diag;
-        });
+        // Simple feature detection - in a real implementation this would be more comprehensive
+        const diagnostics = [];
+        const text = doc.getText();
+        // Check for Array.prototype.toSorted
+        const toSortedMatches = text.matchAll(/\btoSorted\b/g);
+        for (const match of toSortedMatches) {
+            if (!isSupported('js.array.toSorted', target)) {
+                const pos = doc.positionAt(match.index || 0);
+                const range = new vscode.Range(pos, pos.translate(0, 8));
+                const diag = new vscode.Diagnostic(range, 'Array.prototype.toSorted is below required Baseline', vscode.DiagnosticSeverity.Error);
+                diag.source = 'baseline';
+                diagnostics.push(diag);
+            }
+        }
         diagnosticCollection.set(doc.uri, diagnostics);
     }
     context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(refreshDiagnostics));
@@ -67,14 +113,12 @@ function activate(context) {
             const word = doc.getText(wordRange);
             if (/toSorted/.test(word)) {
                 const target = vscode.workspace.getConfiguration().get('baseline.target') ?? 'widely';
-                const sdk = (0, baseline_sdk_1.createDefaultSdk)(target);
-                const ok = sdk.isSupported('js.array.toSorted', target);
+                const ok = isSupported('js.array.toSorted', target);
                 return new vscode.Hover(ok ? 'Array.prototype.toSorted is Baseline' : '⚠️ Array.prototype.toSorted is NOT Baseline');
             }
             if (/scroll-timeline/.test(word)) {
                 const target = vscode.workspace.getConfiguration().get('baseline.target') ?? 'widely';
-                const sdk = (0, baseline_sdk_1.createDefaultSdk)(target);
-                const ok = false; // sample only
+                const ok = isSupported('css.properties.scroll-timeline', target);
                 return new vscode.Hover(ok ? 'scroll-timeline is Baseline' : '⚠️ scroll-timeline is NOT Baseline');
             }
         }

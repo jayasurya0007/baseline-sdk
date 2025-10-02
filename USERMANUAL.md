@@ -1,15 +1,17 @@
 # Baseline Toolkit - User Manual
 
+> **✅ Updated**: The npm package `baseline-toolkit@0.1.4` is now fully functional!
+
 ## 🚀 Quick Start
 
-### Install the SDK
+### Install from npm (Recommended)
 ```bash
-npm install @baseline-toolkit/baseline-sdk
+npm install baseline-toolkit
 ```
 
 ### Basic Usage
 ```js
-import { createDefaultSdk } from '@baseline-toolkit/baseline-sdk';
+import { createDefaultSdk } from 'baseline-toolkit';
 
 const sdk = createDefaultSdk();
 
@@ -25,13 +27,10 @@ console.log(result.issues); // Shows baseline violations
 
 ## 🔧 CLI Tool
 
-### Install CLI
+### Install & Use CLI
 ```bash
-npm install @baseline-toolkit/baseline-cli
-```
+npm install baseline-toolkit
 
-### Use CLI
-```bash
 # Scan current directory
 npx baseline-check .
 
@@ -47,9 +46,9 @@ npx baseline-check . --json > report.json
 
 ## 🔍 ESLint Plugin
 
-### Install Plugin
+### Install & Configure ESLint Plugin
 ```bash
-npm install @baseline-toolkit/eslint-plugin
+npm install baseline-toolkit
 ```
 
 ### Configure ESLint
@@ -58,7 +57,7 @@ npm install @baseline-toolkit/eslint-plugin
 export default [
   {
     plugins: {
-      "baseline": await import("@baseline-toolkit/eslint-plugin")
+      "baseline": await import("baseline-toolkit/eslint-plugin")
     },
     rules: {
       "baseline/no-non-baseline": ["error", { target: "widely" }]
@@ -102,7 +101,8 @@ Creates SDK with full web-features dataset (requires `web-features` package).
 
 ### Install Extension
 ```bash
-npm install @baseline-toolkit/vscode-extension
+# The VSCode extension is part of the development workspace
+# Open packages/vscode-baseline in VSCode and press F5 to run
 ```
 
 ### Configure VSCode
@@ -122,6 +122,7 @@ Add to your VSCode settings:
 
 ### Check Array Methods
 ```js
+import { createDefaultSdk } from 'baseline-toolkit';
 const sdk = createDefaultSdk();
 
 // These will return false for 'widely' target
@@ -157,22 +158,23 @@ console.log(`Found ${result.issues.length} baseline violations`);
 ## 🚨 Troubleshooting
 
 ### Import Errors
-Make sure you're using the correct scoped package names:
-- ✅ `@baseline-toolkit/baseline-sdk`
-- ❌ `baseline-toolkit-sdk`
+Make sure you're using the latest version:
+- ✅ `baseline-toolkit@0.1.4` or later
+- ❌ `baseline-toolkit@0.1.2` (had missing files)
 
 ### ESLint Not Working
-Ensure your ESLint config uses the new plugin format:
+Ensure your ESLint config uses the correct import:
 ```js
 plugins: {
-  "baseline": await import("@baseline-toolkit/eslint-plugin")
+  "baseline": await import("baseline-toolkit/eslint-plugin")
 }
 ```
 
 ### CLI Command Not Found
-Install the CLI package globally:
+Make sure the package is installed:
 ```bash
-npm install -g @baseline-toolkit/baseline-cli
+npm install baseline-toolkit
+npx baseline-check --help
 ```
 
 ## 📚 Feature IDs

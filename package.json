@@ -1,6 +1,6 @@
 {
   "name": "baseline-toolkit",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "Complete toolkit for MDN Baseline compatibility checking - includes SDK, CLI, and ESLint plugin",
   "keywords": [
     "baseline",
@@ -164,7 +164,7 @@
   }
   ,"files": [
     "dist/",
-    "packages/*/dist/",
+    "packages/*/dist/**/*",
     "packages/*/package.json",
     "packages/*/README.md",
     "README.md",

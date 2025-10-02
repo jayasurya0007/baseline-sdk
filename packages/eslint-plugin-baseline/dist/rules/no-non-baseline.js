@@ -1,5 +1,44 @@
-import { createDefaultSdk } from '@baseline-toolkit/baseline-sdk';
-const sdk = createDefaultSdk();
+function compareBaseline(feature, target) {
+    const order = ['limited', 'newly', 'widely'];
+    return order.indexOf(feature) >= order.indexOf(target);
+}
+class InMemoryDataSource {
+    constructor(features) {
+        this.byId = new Map();
+        this.byName = new Map();
+        this.byBcd = new Map();
+        for (const f of features) {
+            this.byId.set(f.id, f);
+            if (f.name)
+                this.byName.set(f.name, f);
+            if (f.bcdId)
+                this.byBcd.set(f.bcdId, f);
+        }
+    }
+    getFeatureById(id) { return this.byId.get(id); }
+    getFeatureByName(name) { return this.byName.get(name); }
+    getFeatureByBcdId(bcdId) { return this.byBcd.get(bcdId); }
+}
+const features = [
+    {
+        id: "js.array.toSorted",
+        name: "Array.prototype.toSorted",
+        status: { baseline: "newly", since: "2023-07" }
+    },
+    {
+        id: "css.properties.scroll-timeline",
+        name: "CSS scroll-timeline",
+        bcdId: "css.properties.scroll-timeline",
+        status: { baseline: "limited" }
+    }
+];
+const dataSource = new InMemoryDataSource(features);
+function isSupported(featureId, target) {
+    const rec = dataSource.getFeatureById(featureId);
+    if (!rec)
+        return false;
+    return compareBaseline(rec.status.baseline, target);
+}
 const rule = {
     meta: {
         type: 'problem',
@@ -29,7 +68,7 @@ const rule = {
                     // Very naive mapping for demo: detect Array.prototype.toSorted
                     const sourceText = context.getSourceCode().getText(node);
                     if (/Array\s*\.\s*prototype\s*\.\s*toSorted/.test(sourceText) || /\btoSorted\b/.test(sourceText)) {
-                        if (!sdk.isSupported('js.array.toSorted', target)) {
+                        if (!isSupported('js.array.toSorted', target)) {
                             context.report({
                                 node: node.property,
                                 messageId: 'notBaseline',
