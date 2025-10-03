@@ -4,14 +4,33 @@
 
 ## 🚀 Quick Start
 
-### Install from npm (Recommended)
+### Installation Options
+
+#### Option 1: Unified Package (Recommended)
 ```bash
 npm install baseline-toolkit
+```
+*Includes SDK, CLI, and ESLint plugin in one package*
+
+#### Option 2: Individual Packages
+```bash
+# Core SDK only
+npm install @baseline-toolkit/baseline-sdk
+
+# CLI tool only  
+npm install @baseline-toolkit/baseline-cli
+
+# ESLint plugin only
+npm install @baseline-toolkit/eslint-plugin
 ```
 
 ### Basic Usage
 ```js
+// Using unified package
 import { createDefaultSdk } from 'baseline-toolkit';
+
+// OR using individual package
+import { createDefaultSdk } from '@baseline-toolkit/baseline-sdk';
 
 const sdk = createDefaultSdk();
 
@@ -35,8 +54,20 @@ console.log(result.issues); // Shows comprehensive baseline violations from full
 
 ### Install & Use CLI
 ```bash
+# Option 1: Using unified package
 npm install baseline-toolkit
+npx baseline-check . --target widely
 
+# Option 2: Using individual package
+npm install @baseline-toolkit/baseline-cli
+npx baseline-check . --target widely
+
+# Option 3: Run without installing
+npx @baseline-toolkit/baseline-cli . --target widely
+```
+
+### CLI Commands
+```bash
 # Scan current directory
 npx baseline-check .
 
@@ -54,16 +85,34 @@ npx baseline-check . --json > report.json
 
 ### Install & Configure ESLint Plugin
 ```bash
+# Option 1: Using unified package
 npm install baseline-toolkit
+
+# Option 2: Using individual package
+npm install @baseline-toolkit/eslint-plugin
 ```
 
 ### Configure ESLint
 ```js
 // eslint.config.js
+
+// Option 1: Using unified package
 export default [
   {
     plugins: {
       "baseline": await import("baseline-toolkit/eslint-plugin")
+    },
+    rules: {
+      "baseline/no-non-baseline": ["error", { target: "widely" }]
+    }
+  }
+];
+
+// Option 2: Using individual package
+export default [
+  {
+    plugins: {
+      "baseline": await import("@baseline-toolkit/eslint-plugin")
     },
     rules: {
       "baseline/no-non-baseline": ["error", { target: "widely" }]
@@ -83,15 +132,44 @@ npx eslint src/
 - **`newly`** - Recently baseline features, good modern browser support  
 - **`widely`** - Widely supported features, works in older browsers too
 
+## 🌍 Scope & Platform Support
+
+### **Primary Focus: Frontend Web Development**
+- ✅ **Browser JavaScript APIs**: DOM, Fetch, Web APIs
+- ✅ **CSS Features**: All CSS properties, selectors, and functions
+- ✅ **Modern JavaScript**: ES6+ features, array methods, promises
+
+### **Secondary Support: Cross-Platform JavaScript**
+- ✅ **Node.js Compatible Features**: Modern JS syntax and standard library methods
+- ✅ **Universal JavaScript**: Features that work in both browser and Node.js
+- ⚠️ **Server-Side**: Limited to JavaScript language features (not Node.js APIs)
+
+### **Not Covered: Backend-Specific Technologies**
+- ❌ **Node.js APIs**: File system, HTTP modules, etc.
+- ❌ **Server Frameworks**: Express.js, Fastify, Koa
+- ❌ **Databases**: MongoDB, PostgreSQL, Redis
+- ❌ **Backend Runtimes**: Deno/Bun-specific features
+
 ## 📝 API Reference
 
 ### SDK Methods
 
 #### `createDefaultSdk()`
-Creates SDK with sample feature data.
+Creates SDK with full web-features dataset (1000+ features).
+
+```js
+// Using unified package
+import { createDefaultSdk } from 'baseline-toolkit';
+
+// Using individual package
+import { createDefaultSdk } from '@baseline-toolkit/baseline-sdk';
+```
 
 #### `createWebFeaturesSdk()`
-Creates SDK with full web-features dataset (requires `web-features` package).
+Creates SDK with full web-features dataset (same as `createDefaultSdk()`).
+
+#### `createLegacySdk()`
+Creates SDK with sample feature data (for testing/development).
 
 #### `sdk.isSupported(featureId, target)`
 - `featureId`: Feature identifier (e.g., 'js.array.toSorted')
@@ -107,9 +185,21 @@ Creates SDK with full web-features dataset (requires `web-features` package).
 
 ### Install Extension
 ```bash
-# The VSCode extension is part of the development workspace
-# Open packages/vscode-baseline in VSCode and press F5 to run
+# Option 1: From VS Code Marketplace (when published)
+# Search for "Baseline Compatibility" by baseline-toolkit
+
+# Option 2: Development/Local Installation
+# Clone the repository and:
+# 1. Open packages/vscode-baseline in VSCode
+# 2. Press F5 to run the extension in development mode
+# 3. Or run: vsce package && code --install-extension baseline-compatibility-0.1.0.vsix
 ```
+
+### Extension Details
+- **Name**: `baseline-compatibility`
+- **Display Name**: Baseline Compatibility
+- **Publisher**: baseline-toolkit
+- **Version**: 0.1.0
 
 ### Configure VSCode
 Add to your VSCode settings:
@@ -128,7 +218,12 @@ Add to your VSCode settings:
 
 ### Check Array Methods
 ```js
+// Using unified package
 import { createDefaultSdk } from 'baseline-toolkit';
+
+// OR using individual package
+import { createDefaultSdk } from '@baseline-toolkit/baseline-sdk';
+
 const sdk = createDefaultSdk();
 
 // These will return false for 'widely' target
@@ -163,23 +258,50 @@ console.log(`Found ${result.issues.length} baseline violations`);
 
 ## 🚨 Troubleshooting
 
+### Package Installation Options
+
+**Unified Package**: `baseline-toolkit`
+- ✅ **Easiest**: One install gets everything
+- ✅ **Consistent**: All tools use same version
+- ✅ **Exports**: Provides `/cli` and `/eslint-plugin` exports
+- ❌ **Size**: Larger package (includes all tools)
+
+**Individual Packages**: `@baseline-toolkit/*`
+- ✅ **Modular**: Install only what you need
+- ✅ **Smaller**: Each package is focused
+- ❌ **Complex**: Manage multiple packages
+- ❌ **Versions**: Need to keep versions in sync
+
 ### Import Errors
 Make sure you're using the latest version:
-- ✅ `baseline-toolkit@0.1.4` or later
-- ❌ `baseline-toolkit@0.1.2` (had missing files)
+- ✅ `baseline-toolkit@0.2.0` or later (unified package)
+- ✅ `@baseline-toolkit/baseline-sdk@0.1.0` or later
+- ✅ `@baseline-toolkit/baseline-cli@0.1.0` or later  
+- ✅ `@baseline-toolkit/eslint-plugin@0.1.0` or later
 
 ### ESLint Not Working
 Ensure your ESLint config uses the correct import:
 ```js
+// Unified package
 plugins: {
   "baseline": await import("baseline-toolkit/eslint-plugin")
+}
+
+// Individual package
+plugins: {
+  "baseline": await import("@baseline-toolkit/eslint-plugin")
 }
 ```
 
 ### CLI Command Not Found
 Make sure the package is installed:
 ```bash
+# Unified package
 npm install baseline-toolkit
+npx baseline-check --help
+
+# Individual package
+npm install @baseline-toolkit/baseline-cli
 npx baseline-check --help
 ```
 
