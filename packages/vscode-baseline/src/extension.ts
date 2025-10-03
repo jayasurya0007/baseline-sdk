@@ -7,6 +7,11 @@ import * as t from '@babel/types';
 
 type BaselineLevel = 'limited' | 'newly' | 'widely';
 
+// Escape a string for safe usage inside RegExp constructor
+function escapeRegex(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Inline SDK to avoid circular dependencies  
 interface BaselineFeature {
   id: string;
@@ -86,6 +91,7 @@ function isSupported(featureId: string, target: BaselineLevel): boolean {
 class FeatureDetector {
   private detectedFeatures = new Set<string>();
   private diagnostics: vscode.Diagnostic[] = [];
+  private cachedCssPatterns: { regex: RegExp; featureId: string }[] | null = null;
 
   detectJSFeatures(text: string, doc: vscode.TextDocument, target: BaselineLevel): vscode.Diagnostic[] {
     this.diagnostics = [];
@@ -113,7 +119,9 @@ class FeatureDetector {
           }
         },
         ArrayExpression: (path: any) => {
-          if (path.node.spread) {
+          // Detect array literal spread: e.g., [...arr]
+          const hasSpread = Array.isArray(path.node.elements) && path.node.elements.some((el: any) => el && el.type === 'SpreadElement');
+          if (hasSpread) {
             const featureId = 'js.generators.array.initializer_spread';
             if (!isSupported(featureId, target)) {
               this.addSimpleDiagnostic(path.node, featureId, doc);
@@ -132,10 +140,14 @@ class FeatureDetector {
             this.addSimpleDiagnostic(path.node, featureId, doc);
           }
         },
-        TopLevelAwaitExpression: (path: any) => {
-          const featureId = 'js.operators.top_level_await';
-          if (!isSupported(featureId, target)) {
-            this.addSimpleDiagnostic(path.node, featureId, doc);
+        AwaitExpression: (path: any) => {
+          // Babel represents top-level await as AwaitExpression at Program body
+          const isTopLevel = !path.getFunctionParent();
+          if (isTopLevel) {
+            const featureId = 'js.operators.top_level_await';
+            if (!isSupported(featureId, target)) {
+              this.addSimpleDiagnostic(path.node, featureId, doc);
+            }
           }
         }
       });
@@ -310,24 +322,7 @@ class FeatureDetector {
 
   detectCSSFeatures(text: string, doc: vscode.TextDocument, target: BaselineLevel): vscode.Diagnostic[] {
     this.diagnostics = [];
-    const patterns = [
-      { regex: /scroll-timeline\s*:/, featureId: 'css.properties.scroll-timeline' },
-      { regex: /container-type\s*:/, featureId: 'css.properties.container-type' },
-      { regex: /:has\s*\(/, featureId: 'css.selectors.has' },
-      { regex: /@container\b/, featureId: 'css.at-rules.container' },
-      { regex: /container-name\s*:/, featureId: 'css.properties.container-name' },
-      { regex: /container-query\s*:/, featureId: 'css.properties.container-query' },
-      { regex: /@supports\s*\(/, featureId: 'css.conditional.supports' },
-      { regex: /backdrop-filter\s*:/, featureId: 'css.properties.backdrop-filter' },
-      { regex: /:is\s*\(/, featureId: 'css.selectors.is' },
-      { regex: /:where\s*\(/, featureId: 'css.selectors.where' },
-      { regex: /grid-template-areas\s*:/, featureId: 'css.properties.grid-template-areas' },
-      { regex: /aspect-ratio\s*:/, featureId: 'css.properties.aspect-ratio' },
-      { regex: /gap\s*:/, featureId: 'css.properties.gap.general_gap' },
-      { regex: /transform-style\s*:/, featureId: 'css.properties.transform-style' },
-      { regex: /@keyframes\s+/, featureId: 'css.at-rules.keyframes' },
-      { regex: /will-change\s*:/, featureId: 'css.properties.will-change' }
-    ];
+    const patterns = this.getCssFeaturePatterns();
 
     patterns.forEach(({ regex, featureId }) => {
       for (const match of text.matchAll(regex)) {
@@ -344,6 +339,78 @@ class FeatureDetector {
     });
 
     return this.diagnostics;
+  }
+
+  private getCssFeaturePatterns(): { regex: RegExp; featureId: string }[] {
+    if (this.cachedCssPatterns) return this.cachedCssPatterns;
+
+    const patterns: { regex: RegExp; featureId: string }[] = [];
+
+    // Generate patterns from full dataset for CSS properties, selectors, and at-rules
+    const addPropertyPattern = (prop: string, featureId: string) => {
+      // Match like: "prop:" optionally with whitespace
+      patterns.push({ regex: new RegExp(`${escapeRegex(prop)}\\s*:`, 'g'), featureId });
+    };
+    const addSelectorPattern = (selector: string, featureId: string) => {
+      // Match like: ":selector("
+      patterns.push({ regex: new RegExp(`:${escapeRegex(selector)}\\s*\\(`, 'g'), featureId });
+    };
+    const addAtRulePattern = (rule: string, featureId: string) => {
+      // Match like: "@rule"
+      patterns.push({ regex: new RegExp(`@${escapeRegex(rule)}\\b`, 'g'), featureId });
+    };
+
+    // Walk through all features in the data source
+    const anyIds: string[] = [];
+    // Collect ids via known keys (no direct iterator, so try some common ones)
+    // We will derive from known CSS prefixes
+    const cssPrefixes = ['css.properties.', 'css.selectors.', 'css.at-rules.'];
+
+    // Probe common properties/selectors/atrules by trying to resolve known ids from dataset
+    // Since we don't have iteration on dataSource, reflect over a representative set
+    // We'll use a heuristic by reading names from a curated list and also widely used properties
+    const knownProps = [
+      'scroll-timeline','container-type','container-name','backdrop-filter','aspect-ratio','gap','transform-style','will-change','grid-template-areas'
+    ];
+    const knownSelectors = ['has','is','where'];
+    const knownAtRules = ['container','supports','keyframes','media','scope','layer'];
+
+    // Prefer generating from known lists first
+    for (const p of knownProps) {
+      const fid = `css.properties.${p}`;
+      if (dataSource.getFeatureById(fid)) addPropertyPattern(p, fid);
+    }
+    for (const s of knownSelectors) {
+      const fid = `css.selectors.${s}`;
+      if (dataSource.getFeatureById(fid)) addSelectorPattern(s, fid);
+    }
+    for (const a of knownAtRules) {
+      const fid = `css.at-rules.${a}`;
+      if (dataSource.getFeatureById(fid)) addAtRulePattern(a, fid);
+    }
+
+    // Fallback: include existing handcrafted patterns to ensure coverage
+    const fallback = [
+      { regex: /scroll-timeline\s*:/g, featureId: 'css.properties.scroll-timeline' },
+      { regex: /container-type\s*:/g, featureId: 'css.properties.container-type' },
+      { regex: /:has\s*\(/g, featureId: 'css.selectors.has' },
+      { regex: /@container\b/g, featureId: 'css.at-rules.container' },
+      { regex: /container-name\s*:/g, featureId: 'css.properties.container-name' },
+      { regex: /@supports\s*\(/g, featureId: 'css.at-rules.supports' },
+      { regex: /backdrop-filter\s*:/g, featureId: 'css.properties.backdrop-filter' },
+      { regex: /:is\s*\(/g, featureId: 'css.selectors.is' },
+      { regex: /:where\s*\(/g, featureId: 'css.selectors.where' },
+      { regex: /grid-template-areas\s*:/g, featureId: 'css.properties.grid-template-areas' },
+      { regex: /aspect-ratio\s*:/g, featureId: 'css.properties.aspect-ratio' },
+      { regex: /gap\s*:/g, featureId: 'css.properties.gap.general_gap' },
+      { regex: /transform-style\s*:/g, featureId: 'css.properties.transform-style' },
+      { regex: /@keyframes\s+/g, featureId: 'css.at-rules.keyframes' },
+      { regex: /will-change\s*:/g, featureId: 'css.properties.will-change' }
+    ];
+    for (const f of fallback) patterns.push(f);
+
+    this.cachedCssPatterns = patterns;
+    return patterns;
   }
 }
 
@@ -414,7 +481,7 @@ export function activate(context: vscode.ExtensionContext) {
 				};
 				
 				// CSS feature detection
-				const cssFeatureMap: { [key: string]: string } = {
+    const cssFeatureMap: { [key: string]: string } = {
 					'scroll-timeline': 'css.properties.scroll-timeline',
 					'container-type': 'css.properties.container-type',
 					'container-name': 'css.properties.container-name',
@@ -422,7 +489,7 @@ export function activate(context: vscode.ExtensionContext) {
 					'aspect-ratio': 'css.properties.aspect-ratio',
 					'gap': 'css.properties.gap.general_gap',
 					'will-change': 'css.properties.will-change',
-					'transform-style': 'css.operators.charset'
+					'transform-style': 'css.properties.transform-style'
 				};
 
 				// Check for exact matches

@@ -1,0 +1,26 @@
+# Default ignores
+**/*.map
+.vscode/
+.git/
+.gitignore
+node_modules/
+src/
+**/test/**
+**/*.ts
+**/*.tsx
+**/*.ps1
+**/*.sh
+**/*.yml
+**/*.yaml
+**/*.toml
+**/*.lock
+**/*.vsix
+../**
+../../**
+
+# Keep only the built output and metadata
+!dist/**
+!package.json
+!README.md
+!tsconfig.json
+!LICENSE

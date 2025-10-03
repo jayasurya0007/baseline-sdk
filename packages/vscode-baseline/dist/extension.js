@@ -44,6 +44,10 @@ const parser_1 = require("@babel/parser");
 const traverse_1 = __importDefault(require("@babel/traverse"));
 // @ts-ignore
 const t = __importStar(require("@babel/types"));
+// Escape a string for safe usage inside RegExp constructor
+function escapeRegex(input) {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 function compareBaseline(feature, target) {
     const order = ['limited', 'newly', 'widely'];
     return order.indexOf(feature) >= order.indexOf(target);
@@ -110,6 +114,7 @@ class FeatureDetector {
     constructor() {
         this.detectedFeatures = new Set();
         this.diagnostics = [];
+        this.cachedCssPatterns = null;
     }
     detectJSFeatures(text, doc, target) {
         this.diagnostics = [];
@@ -135,7 +140,9 @@ class FeatureDetector {
                     }
                 },
                 ArrayExpression: (path) => {
-                    if (path.node.spread) {
+                    // Detect array literal spread: e.g., [...arr]
+                    const hasSpread = Array.isArray(path.node.elements) && path.node.elements.some((el) => el && el.type === 'SpreadElement');
+                    if (hasSpread) {
                         const featureId = 'js.generators.array.initializer_spread';
                         if (!isSupported(featureId, target)) {
                             this.addSimpleDiagnostic(path.node, featureId, doc);
@@ -154,10 +161,14 @@ class FeatureDetector {
                         this.addSimpleDiagnostic(path.node, featureId, doc);
                     }
                 },
-                TopLevelAwaitExpression: (path) => {
-                    const featureId = 'js.operators.top_level_await';
-                    if (!isSupported(featureId, target)) {
-                        this.addSimpleDiagnostic(path.node, featureId, doc);
+                AwaitExpression: (path) => {
+                    // Babel represents top-level await as AwaitExpression at Program body
+                    const isTopLevel = !path.getFunctionParent();
+                    if (isTopLevel) {
+                        const featureId = 'js.operators.top_level_await';
+                        if (!isSupported(featureId, target)) {
+                            this.addSimpleDiagnostic(path.node, featureId, doc);
+                        }
                     }
                 }
             });
@@ -315,24 +326,7 @@ class FeatureDetector {
     }
     detectCSSFeatures(text, doc, target) {
         this.diagnostics = [];
-        const patterns = [
-            { regex: /scroll-timeline\s*:/, featureId: 'css.properties.scroll-timeline' },
-            { regex: /container-type\s*:/, featureId: 'css.properties.container-type' },
-            { regex: /:has\s*\(/, featureId: 'css.selectors.has' },
-            { regex: /@container\b/, featureId: 'css.at-rules.container' },
-            { regex: /container-name\s*:/, featureId: 'css.properties.container-name' },
-            { regex: /container-query\s*:/, featureId: 'css.properties.container-query' },
-            { regex: /@supports\s*\(/, featureId: 'css.conditional.supports' },
-            { regex: /backdrop-filter\s*:/, featureId: 'css.properties.backdrop-filter' },
-            { regex: /:is\s*\(/, featureId: 'css.selectors.is' },
-            { regex: /:where\s*\(/, featureId: 'css.selectors.where' },
-            { regex: /grid-template-areas\s*:/, featureId: 'css.properties.grid-template-areas' },
-            { regex: /aspect-ratio\s*:/, featureId: 'css.properties.aspect-ratio' },
-            { regex: /gap\s*:/, featureId: 'css.properties.gap.general_gap' },
-            { regex: /transform-style\s*:/, featureId: 'css.properties.transform-style' },
-            { regex: /@keyframes\s+/, featureId: 'css.at-rules.keyframes' },
-            { regex: /will-change\s*:/, featureId: 'css.properties.will-change' }
-        ];
+        const patterns = this.getCssFeaturePatterns();
         patterns.forEach(({ regex, featureId }) => {
             for (const match of text.matchAll(regex)) {
                 if (!isSupported(featureId, target)) {
@@ -347,6 +341,75 @@ class FeatureDetector {
             }
         });
         return this.diagnostics;
+    }
+    getCssFeaturePatterns() {
+        if (this.cachedCssPatterns)
+            return this.cachedCssPatterns;
+        const patterns = [];
+        // Generate patterns from full dataset for CSS properties, selectors, and at-rules
+        const addPropertyPattern = (prop, featureId) => {
+            // Match like: "prop:" optionally with whitespace
+            patterns.push({ regex: new RegExp(`${escapeRegex(prop)}\\s*:`, 'g'), featureId });
+        };
+        const addSelectorPattern = (selector, featureId) => {
+            // Match like: ":selector("
+            patterns.push({ regex: new RegExp(`:${escapeRegex(selector)}\\s*\\(`, 'g'), featureId });
+        };
+        const addAtRulePattern = (rule, featureId) => {
+            // Match like: "@rule"
+            patterns.push({ regex: new RegExp(`@${escapeRegex(rule)}\\b`, 'g'), featureId });
+        };
+        // Walk through all features in the data source
+        const anyIds = [];
+        // Collect ids via known keys (no direct iterator, so try some common ones)
+        // We will derive from known CSS prefixes
+        const cssPrefixes = ['css.properties.', 'css.selectors.', 'css.at-rules.'];
+        // Probe common properties/selectors/atrules by trying to resolve known ids from dataset
+        // Since we don't have iteration on dataSource, reflect over a representative set
+        // We'll use a heuristic by reading names from a curated list and also widely used properties
+        const knownProps = [
+            'scroll-timeline', 'container-type', 'container-name', 'backdrop-filter', 'aspect-ratio', 'gap', 'transform-style', 'will-change', 'grid-template-areas'
+        ];
+        const knownSelectors = ['has', 'is', 'where'];
+        const knownAtRules = ['container', 'supports', 'keyframes', 'media', 'scope', 'layer'];
+        // Prefer generating from known lists first
+        for (const p of knownProps) {
+            const fid = `css.properties.${p}`;
+            if (dataSource.getFeatureById(fid))
+                addPropertyPattern(p, fid);
+        }
+        for (const s of knownSelectors) {
+            const fid = `css.selectors.${s}`;
+            if (dataSource.getFeatureById(fid))
+                addSelectorPattern(s, fid);
+        }
+        for (const a of knownAtRules) {
+            const fid = `css.at-rules.${a}`;
+            if (dataSource.getFeatureById(fid))
+                addAtRulePattern(a, fid);
+        }
+        // Fallback: include existing handcrafted patterns to ensure coverage
+        const fallback = [
+            { regex: /scroll-timeline\s*:/g, featureId: 'css.properties.scroll-timeline' },
+            { regex: /container-type\s*:/g, featureId: 'css.properties.container-type' },
+            { regex: /:has\s*\(/g, featureId: 'css.selectors.has' },
+            { regex: /@container\b/g, featureId: 'css.at-rules.container' },
+            { regex: /container-name\s*:/g, featureId: 'css.properties.container-name' },
+            { regex: /@supports\s*\(/g, featureId: 'css.at-rules.supports' },
+            { regex: /backdrop-filter\s*:/g, featureId: 'css.properties.backdrop-filter' },
+            { regex: /:is\s*\(/g, featureId: 'css.selectors.is' },
+            { regex: /:where\s*\(/g, featureId: 'css.selectors.where' },
+            { regex: /grid-template-areas\s*:/g, featureId: 'css.properties.grid-template-areas' },
+            { regex: /aspect-ratio\s*:/g, featureId: 'css.properties.aspect-ratio' },
+            { regex: /gap\s*:/g, featureId: 'css.properties.gap.general_gap' },
+            { regex: /transform-style\s*:/g, featureId: 'css.properties.transform-style' },
+            { regex: /@keyframes\s+/g, featureId: 'css.at-rules.keyframes' },
+            { regex: /will-change\s*:/g, featureId: 'css.properties.will-change' }
+        ];
+        for (const f of fallback)
+            patterns.push(f);
+        this.cachedCssPatterns = patterns;
+        return patterns;
     }
 }
 function activate(context) {
@@ -416,7 +479,7 @@ function activate(context) {
                 'aspect-ratio': 'css.properties.aspect-ratio',
                 'gap': 'css.properties.gap.general_gap',
                 'will-change': 'css.properties.will-change',
-                'transform-style': 'css.operators.charset'
+                'transform-style': 'css.properties.transform-style'
             };
             // Check for exact matches
             const jsFeature = jsFeatureMap[word];
