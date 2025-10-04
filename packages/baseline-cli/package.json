@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@babel/parser": "^7.28.4",
+    "@baseline-toolkit/baseline-sdk": "file:../baseline-sdk",
     "fast-glob": "^3.3.2",
     "postcss": "^8.5.6",
     "yargs": "^17.7.2",

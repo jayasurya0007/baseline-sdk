@@ -4,8 +4,30 @@ import postcss from 'postcss';
 
 export type BaselineLevel = 'limited' | 'newly' | 'widely';
 
-export interface FeatureStatus { baseline: BaselineLevel; since?: string; }
-export interface FeatureRecord { id: string; name: string; status: FeatureStatus; bcdId?: string; }
+export interface BrowserSupport {
+  chrome?: string;
+  chrome_android?: string;
+  edge?: string;
+  firefox?: string;
+  firefox_android?: string;
+  safari?: string;
+  safari_ios?: string;
+}
+
+export interface FeatureStatus { 
+  baseline: BaselineLevel; 
+  since?: string;
+  support?: BrowserSupport;
+}
+
+export interface FeatureRecord { 
+  id: string; 
+  name: string; 
+  status: FeatureStatus; 
+  bcdId?: string;
+  description?: string;
+  spec?: string | string[];
+}
 
 export interface ScanIssue { kind: 'js' | 'css'; featureId: string; message: string; line: number; column: number; }
 export interface ScanResult { issues: ScanIssue[]; }
@@ -25,6 +47,40 @@ export interface BaselineSdk {
 function compareBaseline(feature: BaselineLevel, target: BaselineLevel): boolean {
   const order: BaselineLevel[] = ['limited', 'newly', 'widely'];
   return order.indexOf(feature) >= order.indexOf(target);
+}
+
+/**
+ * Format browser support information into a readable string
+ */
+function formatBrowserSupport(support: BrowserSupport): string {
+  const browserNames: { [key: string]: string } = {
+    chrome: 'Chrome',
+    chrome_android: 'Chrome Android',
+    edge: 'Edge',
+    firefox: 'Firefox',
+    firefox_android: 'Firefox Android',
+    safari: 'Safari',
+    safari_ios: 'Safari iOS'
+  };
+
+  const entries = Object.entries(support)
+    .filter(([_, version]) => version && version !== 'false')
+    .map(([browser, version]) => `${browserNames[browser] || browser} ${version}+`)
+    .sort();
+
+  return entries.join(', ');
+}
+
+/**
+ * Create a concise browser support message for CLI
+ */
+function createConciseBrowserMessage(
+  featureName: string,
+  support: BrowserSupport,
+  target: 'limited' | 'newly' | 'widely'
+): string {
+  const formatted = formatBrowserSupport(support);
+  return `${featureName} is below required Baseline (${target}) - Supported in: ${formatted}`;
 }
 
 export class InMemoryDataSource implements BaselineDataSource {
@@ -52,40 +108,42 @@ export function createSdk(dataSource: BaselineDataSource): BaselineSdk {
     },
     async scanCode(source: string, options: ScanOptions): Promise<ScanResult> {
       const issues: ScanIssue[] = [];
-      try {
-        babel.parse(source, { sourceType: 'module', plugins: ['typescript', 'jsx'] });
-        // Enhanced JavaScript feature detection
-        const jsPatterns = [
-          { pattern: /\.toSorted\b/g, featureId: 'array-by-copy', name: 'Array.prototype.toSorted' },
-          { pattern: /\.toReversed\b/g, featureId: 'array-by-copy', name: 'Array.prototype.toReversed' },
-          { pattern: /\.toSpliced\b/g, featureId: 'array-by-copy', name: 'Array.prototype.toSpliced' },
-          { pattern: /\.with\b/g, featureId: 'array-by-copy', name: 'Array.prototype.with' },
-          { pattern: /\.at\b/g, featureId: 'array-at', name: 'Array.prototype.at' },
-          { pattern: /\.findLast\b/g, featureId: 'array-findlast', name: 'Array.prototype.findLast' },
-          { pattern: /\.findLastIndex\b/g, featureId: 'array-findlast', name: 'Array.prototype.findLastIndex' },
-          { pattern: /Promise\.allSettled\b/g, featureId: 'promise-allsettled', name: 'Promise.allSettled' },
-          { pattern: /Promise\.any\b/g, featureId: 'promise-any', name: 'Promise.any' },
-          { pattern: /\?\./g, featureId: 'optional-chaining', name: 'Optional chaining (?.)' },
-          { pattern: /\?\?(?!=)/g, featureId: 'nullish-coalescing', name: 'Nullish coalescing (??)' },
-          { pattern: /\?\?=/g, featureId: 'logical-assignment', name: 'Nullish coalescing assignment (??=)' },
-          { pattern: /Object\.hasOwn\b/g, featureId: 'object-hasown', name: 'Object.hasOwn' },
-          { pattern: /\.replaceAll\b/g, featureId: 'string-replaceall', name: 'String.prototype.replaceAll' },
-          { pattern: /new AbortController\b/g, featureId: 'abortcontroller', name: 'AbortController' },
-          { pattern: /import\s*\(/g, featureId: 'dynamic-import', name: 'Dynamic import()' },
-          { pattern: /\d+n\b/g, featureId: 'bigint', name: 'BigInt literals' }
-        ];
-        
-        for (const { pattern, featureId, name } of jsPatterns) {
-          const matches = source.matchAll(pattern);
-          for (const m of matches) {
-            const col = (m.index ?? 0);
-            const feature = dataSource.getFeatureById(featureId);
-            if (feature && !compareBaseline(feature.status.baseline, options.target)) {
-              issues.push({ kind: 'js', featureId: feature.id, message: `${name} is below required Baseline (${options.target})`, line: 1, column: col });
+      
+      // Use comprehensive feature detection patterns that match web-features dataset
+      const jsPatterns = [
+        { pattern: /\.toSorted\b/g, featureId: 'array-by-copy', name: 'Array.prototype.toSorted' },
+        { pattern: /\.toReversed\b/g, featureId: 'array-by-copy', name: 'Array.prototype.toReversed' },
+        { pattern: /\.toSpliced\b/g, featureId: 'array-by-copy', name: 'Array.prototype.toSpliced' },
+        { pattern: /\.with\b/g, featureId: 'array-by-copy', name: 'Array.prototype.with' },
+        { pattern: /\.at\b/g, featureId: 'array-at', name: 'Array.prototype.at' },
+        { pattern: /\.findLast\b/g, featureId: 'array-findlast', name: 'Array.prototype.findLast' },
+        { pattern: /\.findLastIndex\b/g, featureId: 'array-findlast', name: 'Array.prototype.findLastIndex' },
+        { pattern: /Promise\.allSettled\b/g, featureId: 'promise-allsettled', name: 'Promise.allSettled' },
+        { pattern: /Promise\.any\b/g, featureId: 'promise-any', name: 'Promise.any' },
+        { pattern: /\?\./g, featureId: 'optional-chaining', name: 'Optional chaining (?.)' },
+        { pattern: /\?\?(?!=)/g, featureId: 'nullish-coalescing', name: 'Nullish coalescing (??)' },
+        { pattern: /\?\?=/g, featureId: 'logical-assignment', name: 'Nullish coalescing assignment (??=)' },
+        { pattern: /Object\.hasOwn\b/g, featureId: 'object-hasown', name: 'Object.hasOwn' },
+        { pattern: /\.replaceAll\b/g, featureId: 'string-replaceall', name: 'String.prototype.replaceAll' },
+        { pattern: /new AbortController\b/g, featureId: 'abortcontroller', name: 'AbortController' },
+        { pattern: /import\s*\(/g, featureId: 'dynamic-import', name: 'Dynamic import()' },
+        { pattern: /\d+n\b/g, featureId: 'bigint', name: 'BigInt literals' }
+      ];
+      
+      for (const { pattern, featureId, name } of jsPatterns) {
+        const matches = source.matchAll(pattern);
+        for (const m of matches) {
+          const col = (m.index ?? 0);
+          const feature = dataSource.getFeatureById(featureId);
+          if (feature && !compareBaseline(feature.status.baseline, options.target)) {
+            let message = `${name} is below required Baseline (${options.target})`;
+            if (feature.status.support) {
+              message = createConciseBrowserMessage(feature.name || name, feature.status.support, options.target);
             }
+            issues.push({ kind: 'js', featureId: feature.id, message, line: 1, column: col });
           }
         }
-      } catch {}
+      }
 
       try {
         await postcss().process(source, { from: undefined });
@@ -118,7 +176,11 @@ export function createSdk(dataSource: BaselineDataSource): BaselineSdk {
             const col = (m.index ?? 0);
             const feature = dataSource.getFeatureById(featureId);
             if (feature && !compareBaseline(feature.status.baseline, options.target)) {
-              issues.push({ kind: 'css', featureId: feature.id, message: `${name} is below required Baseline (${options.target})`, line: 1, column: col });
+              let message = `${name} is below required Baseline (${options.target})`;
+              if (feature.status.support) {
+                message = createConciseBrowserMessage(feature.name || name, feature.status.support, options.target);
+              }
+              issues.push({ kind: 'css', featureId: feature.id, message, line: 1, column: col });
             }
           }
         }
@@ -132,13 +194,93 @@ export function createSdk(dataSource: BaselineDataSource): BaselineSdk {
 // Comprehensive features data for enhanced detection
 const features = [
   // Array methods
-  { "id": "array-by-copy", "name": "Array by copy methods", "status": { "baseline": "newly" as BaselineLevel, "since": "2023-07" } },
-  { "id": "array-at", "name": "Array.prototype.at", "status": { "baseline": "newly" as BaselineLevel, "since": "2022-03" } },
-  { "id": "array-findlast", "name": "Array findLast methods", "status": { "baseline": "newly" as BaselineLevel, "since": "2022-09" } },
+  { 
+    "id": "array-by-copy", 
+    "name": "Array by copy methods", 
+    "status": { 
+      "baseline": "newly" as BaselineLevel, 
+      "since": "2023-07",
+      "support": {
+        "chrome": "110",
+        "chrome_android": "110",
+        "edge": "110",
+        "firefox": "115",
+        "firefox_android": "115",
+        "safari": "16",
+        "safari_ios": "16"
+      }
+    } 
+  },
+  { 
+    "id": "array-at", 
+    "name": "Array.prototype.at", 
+    "status": { 
+      "baseline": "newly" as BaselineLevel, 
+      "since": "2022-03",
+      "support": {
+        "chrome": "92",
+        "chrome_android": "92",
+        "edge": "92",
+        "firefox": "90",
+        "firefox_android": "90",
+        "safari": "15.4",
+        "safari_ios": "15.4"
+      }
+    } 
+  },
+  { 
+    "id": "array-findlast", 
+    "name": "Array findLast methods", 
+    "status": { 
+      "baseline": "newly" as BaselineLevel, 
+      "since": "2022-09",
+      "support": {
+        "chrome": "97",
+        "chrome_android": "97",
+        "edge": "97",
+        "firefox": "104",
+        "firefox_android": "104",
+        "safari": "15.4",
+        "safari_ios": "15.4"
+      }
+    } 
+  },
   
   // Promise methods
-  { "id": "promise-allsettled", "name": "Promise.allSettled", "status": { "baseline": "newly" as BaselineLevel, "since": "2020-08" } },
-  { "id": "promise-any", "name": "Promise.any", "status": { "baseline": "newly" as BaselineLevel, "since": "2021-08" } },
+  { 
+    "id": "promise-allsettled", 
+    "name": "Promise.allSettled", 
+    "status": { 
+      "baseline": "newly" as BaselineLevel, 
+      "since": "2020-08",
+      "support": {
+        "chrome": "76",
+        "chrome_android": "76",
+        "edge": "79",
+        "firefox": "71",
+        "firefox_android": "71",
+        "safari": "13",
+        "safari_ios": "13"
+      }
+    } 
+  },
+  { 
+    "id": "promise-any", 
+    "name": "Promise.any", 
+    "status": { 
+      "baseline": "newly" as BaselineLevel, 
+      "since": "2021-08",
+      "support": {
+        "chrome": "85",
+        "chrome_android": "85",
+        "edge": "85",
+        "firefox": "79",
+        "firefox_android": "79",
+        "safari": "14",
+        "safari_ios": "14"
+      }
+    } 
+  },
   
   // Modern JavaScript syntax
   { "id": "optional-chaining", "name": "Optional chaining (?.)", "status": { "baseline": "widely" as BaselineLevel, "since": "2020-04" } },
@@ -208,11 +350,19 @@ function mapWebFeatureToRecord(id: string, feat: any): any {
   const baseline = feat.status?.baseline === 'high' ? 'widely' : feat.status?.baseline === 'low' ? 'newly' : 'limited';
   const since = feat.status?.baseline_high_date || feat.status?.baseline_low_date;
   const bcdId = Array.isArray(feat.bcd) ? feat.bcd[0] : feat.bcd;
+  const support = feat.status?.support;
+  
   return {
     id,
     name: feat.name || id,
-    status: { baseline: baseline, since: since || undefined },
-    bcdId: bcdId
+    status: { 
+      baseline: baseline, 
+      since: since || undefined,
+      support: support || undefined
+    },
+    bcdId: bcdId,
+    description: feat.description,
+    spec: feat.spec
   };
 }
 

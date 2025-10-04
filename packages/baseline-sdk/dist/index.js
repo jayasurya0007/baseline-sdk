@@ -3,6 +3,7 @@ import postcss from 'postcss';
 import features from './data/features.sample.js';
 import { mapWebFeatureToRecord } from './webFeatures.js';
 import { FeatureDetector } from './featureDetector.js';
+import { createConciseBrowserMessage } from './browserCompatibility.js';
 function compareBaseline(feature, target) {
     const order = ['limited', 'newly', 'widely'];
     return order.indexOf(feature) >= order.indexOf(target);
@@ -36,14 +37,22 @@ export function createSdk(dataSource) {
             // Use the comprehensive feature detector for 1000+ features
             const detector = new FeatureDetector(dataSource);
             const detectedFeatures = detector.detectFeatures(source, options.target);
-            // Convert to the expected format
-            const issues = detectedFeatures.map(feature => ({
-                kind: feature.kind,
-                featureId: feature.featureId,
-                message: feature.message,
-                line: feature.line,
-                column: feature.column
-            }));
+            // Convert to the expected format with enhanced browser compatibility messages
+            const issues = detectedFeatures.map(feature => {
+                const featureRecord = dataSource.getFeatureById(feature.featureId);
+                let message = feature.message;
+                // Enhance message with browser compatibility if available
+                if (featureRecord?.status.support) {
+                    message = createConciseBrowserMessage(featureRecord.name || feature.featureId, featureRecord.status.support, options.target);
+                }
+                return {
+                    kind: feature.kind,
+                    featureId: feature.featureId,
+                    message: message,
+                    line: feature.line,
+                    column: feature.column
+                };
+            });
             // Fallback: Also run the original basic detection for backward compatibility
             try {
                 babel.parse(source, { sourceType: 'module', plugins: ['typescript', 'jsx'] });
@@ -55,7 +64,11 @@ export function createSdk(dataSource) {
                         // Only add if not already detected by comprehensive detector
                         const alreadyDetected = issues.some(issue => issue.column === col && issue.featureId === feature.id);
                         if (!alreadyDetected) {
-                            issues.push({ kind: 'js', featureId: feature.id, message: `${feature.name} is below required Baseline`, line: 1, column: col });
+                            let message = `${feature.name} is below required Baseline`;
+                            if (feature.status.support) {
+                                message = createConciseBrowserMessage(feature.name, feature.status.support, options.target);
+                            }
+                            issues.push({ kind: 'js', featureId: feature.id, message, line: 1, column: col });
                         }
                     }
                 }
@@ -71,7 +84,11 @@ export function createSdk(dataSource) {
                         // Only add if not already detected by comprehensive detector
                         const alreadyDetected = issues.some(issue => issue.column === col && issue.featureId === feature.id);
                         if (!alreadyDetected) {
-                            issues.push({ kind: 'css', featureId: feature.id, message: `CSS property 'scroll-timeline' is below required Baseline`, line: 1, column: col });
+                            let message = `CSS property 'scroll-timeline' is below required Baseline`;
+                            if (feature.status.support) {
+                                message = createConciseBrowserMessage(feature.name, feature.status.support, options.target);
+                            }
+                            issues.push({ kind: 'css', featureId: feature.id, message, line: 1, column: col });
                         }
                     }
                 }

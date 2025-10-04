@@ -1,4 +1,4 @@
-import type { FeatureRecord } from './types.js';
+import type { FeatureRecord, BrowserSupport } from './types.js';
 type WebFeature = {
     name: string;
     slug?: string;
@@ -6,8 +6,11 @@ type WebFeature = {
         baseline?: 'low' | 'high' | false;
         baseline_low_date?: string;
         baseline_high_date?: string;
+        support?: BrowserSupport;
     };
     bcd?: string | string[];
+    description?: string;
+    spec?: string | string[];
 };
 export declare function mapWebFeatureToRecord(id: string, f: WebFeature): FeatureRecord | null;
 export {};

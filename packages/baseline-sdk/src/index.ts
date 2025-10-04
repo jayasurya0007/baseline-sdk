@@ -4,6 +4,7 @@ import type { BaselineLevel, BaselineSdk, BaselineDataSource, ScanOptions, ScanR
 import features from './data/features.sample.js';
 import { mapWebFeatureToRecord } from './webFeatures.js';
 import { FeatureDetector } from './featureDetector.js';
+import { createConciseBrowserMessage, createBrowserSupportMessage } from './browserCompatibility.js';
 
 function compareBaseline(feature: BaselineLevel, target: BaselineLevel): boolean {
   const order: BaselineLevel[] = ['limited', 'newly', 'widely'];
@@ -38,14 +39,28 @@ export function createSdk(dataSource: BaselineDataSource): BaselineSdk {
       const detector = new FeatureDetector(dataSource);
       const detectedFeatures = detector.detectFeatures(source, options.target);
       
-      // Convert to the expected format
-      const issues: ScanIssue[] = detectedFeatures.map(feature => ({
-        kind: feature.kind,
-        featureId: feature.featureId,
-        message: feature.message,
-        line: feature.line,
-        column: feature.column
-      }));
+      // Convert to the expected format with enhanced browser compatibility messages
+      const issues: ScanIssue[] = detectedFeatures.map(feature => {
+        const featureRecord = dataSource.getFeatureById(feature.featureId);
+        let message = feature.message;
+        
+        // Enhance message with browser compatibility if available
+        if (featureRecord?.status.support) {
+          message = createConciseBrowserMessage(
+            featureRecord.name || feature.featureId,
+            featureRecord.status.support,
+            options.target
+          );
+        }
+        
+        return {
+          kind: feature.kind,
+          featureId: feature.featureId,
+          message: message,
+          line: feature.line,
+          column: feature.column
+        };
+      });
 
       // Fallback: Also run the original basic detection for backward compatibility
       try {
@@ -60,7 +75,11 @@ export function createSdk(dataSource: BaselineDataSource): BaselineSdk {
               issue.column === col && issue.featureId === feature.id
             );
             if (!alreadyDetected) {
-              issues.push({ kind: 'js', featureId: feature.id, message: `${feature.name} is below required Baseline`, line: 1, column: col });
+              let message = `${feature.name} is below required Baseline`;
+              if (feature.status.support) {
+                message = createConciseBrowserMessage(feature.name, feature.status.support, options.target);
+              }
+              issues.push({ kind: 'js', featureId: feature.id, message, line: 1, column: col });
             }
           }
         }
@@ -78,7 +97,11 @@ export function createSdk(dataSource: BaselineDataSource): BaselineSdk {
               issue.column === col && issue.featureId === feature.id
             );
             if (!alreadyDetected) {
-              issues.push({ kind: 'css', featureId: feature.id, message: `CSS property 'scroll-timeline' is below required Baseline`, line: 1, column: col });
+              let message = `CSS property 'scroll-timeline' is below required Baseline`;
+              if (feature.status.support) {
+                message = createConciseBrowserMessage(feature.name, feature.status.support, options.target);
+              }
+              issues.push({ kind: 'css', featureId: feature.id, message, line: 1, column: col });
             }
           }
         }

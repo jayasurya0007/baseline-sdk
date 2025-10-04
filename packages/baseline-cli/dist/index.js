@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { createWebFeaturesSdk } from './sdk-inline.js';
+import { createWebFeaturesSdk } from '@baseline-toolkit/baseline-sdk';
 async function main() {
     const argv = await yargs(hideBin(process.argv))
         .scriptName('baseline-check')
@@ -28,11 +28,25 @@ async function main() {
         '**/out/**'
     ];
     const userIgnores = (argv.ignore || []).map(g => g.replace(/\\/g, '/'));
-    const patterns = [
-        path.join(dir, '**/*.{js,jsx,ts,tsx,css}').replace(/\\/g, '/'),
-        ...[...defaultIgnores, ...userIgnores].map(g => '!' + path.join(dir, g).replace(/\\/g, '/'))
-    ];
-    const files = await fg(patterns, { dot: false, onlyFiles: true });
+    // Check if the input is a file or directory
+    const resolvedDir = path.resolve(dir);
+    const stat = await fs.stat(resolvedDir).catch(() => null);
+    let files;
+    if (stat?.isFile()) {
+        // Single file
+        files = [resolvedDir];
+    }
+    else if (stat?.isDirectory()) {
+        // Directory - use glob patterns
+        const patterns = [
+            path.join(resolvedDir, '**/*.{js,jsx,ts,tsx,css}').replace(/\\/g, '/'),
+            ...[...defaultIgnores, ...userIgnores].map(g => '!' + path.join(resolvedDir, g).replace(/\\/g, '/'))
+        ];
+        files = await fg(patterns, { dot: false, onlyFiles: true });
+    }
+    else {
+        files = [];
+    }
     const allIssues = [];
     for (const file of files) {
         const content = await fs.readFile(file, 'utf8');
