@@ -21,6 +21,18 @@ export interface ScanResult {
 }
 export interface ScanOptions {
     target: BaselineLevel;
+    aiSuggestions?: boolean;
+    aiApiKey?: string;
+}
+export interface AIFixSuggestion {
+    originalCode: string;
+    suggestedCode: string;
+    explanation: string;
+    confidence: 'high' | 'medium' | 'low';
+    featureId: string;
+}
+export interface ScanIssueWithSuggestion extends ScanIssue {
+    aiSuggestion?: AIFixSuggestion;
 }
 export interface BaselineDataSource {
     getFeatureById(id: string): FeatureRecord | undefined;

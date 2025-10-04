@@ -13,11 +13,15 @@ yarn.lock
 .env.test.local
 .env.production.local
 
+# API Keys (never commit these!)
+*.key
+.api-keys
+secrets/
+
 # Build outputs
 /dist
 /build
 /lib
-/coverage
 *.tgz
 *.tar.gz
 
@@ -56,6 +60,10 @@ coverage/
 # Temporary folders
 tmp/
 temp/
+
+# Test files created by setup scripts
+test-ai.js
+test-ai.css
 
 # Editor directories and files
 .vscode/*

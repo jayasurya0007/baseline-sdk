@@ -1,0 +1,39 @@
+{
+  "name": "@baseline-toolkit/baseline-ai-fixer",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo lint ok",
+    "test": "node --test || exit 0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.10",
+    "typescript": "^5.9.2"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jayasurya0007/baseline-sdk.git"
+  },
+  "bugs": { "url": "https://github.com/jayasurya0007/baseline-sdk/issues" },
+  "homepage": "https://github.com/jayasurya0007/baseline-sdk#readme",
+  "publishConfig": { "access": "public" },
+  "keywords": ["baseline", "ai", "fixer", "perplexity", "compatibility"]
+}

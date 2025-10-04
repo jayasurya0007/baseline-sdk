@@ -6,15 +6,17 @@ Baseline Compatibility Toolkit is a full‑stack toolchain to integrate MDN Base
 - @baseline-toolkit/eslint-plugin: ESLint rules to prevent non‑Baseline features
 - @baseline-toolkit/baseline-cli: CI/terminal scanner for projects
 - @baseline-toolkit/vscode-extension: VS Code extension for diagnostics and hovers
+- **@baseline-toolkit/baseline-ai-fixer: 🤖 AI-powered fix suggestions using Perplexity AI** ✨ NEW!
 
 ### Monorepo layout
 
 ```
 packages/
-  baseline-sdk/     (@baseline-toolkit/baseline-sdk)
-  eslint-plugin-baseline/  (@baseline-toolkit/eslint-plugin)
-  baseline-cli/     (@baseline-toolkit/baseline-cli)
-  vscode-baseline/  (@baseline-toolkit/vscode-extension)
+  baseline-sdk/           (@baseline-toolkit/baseline-sdk)
+  eslint-plugin-baseline/ (@baseline-toolkit/eslint-plugin)
+  baseline-cli/           (@baseline-toolkit/baseline-cli)
+  vscode-baseline/        (@baseline-toolkit/vscode-extension)
+  baseline-ai-fixer/      (@baseline-toolkit/baseline-ai-fixer) ✨ NEW!
 ```
 
 ### Quick start
@@ -31,6 +33,18 @@ npm run build
 ```bash
 node packages/baseline-cli/dist/index.js ./ --target widely
 ```
+
+2a) **NEW: Try AI-powered suggestions** 🤖
+
+```bash
+# Set your Perplexity API key
+export PERPLEXITY_API_KEY=your_api_key_here
+
+# Run with AI suggestions
+node packages/baseline-cli/dist/index.js ./ --target widely --ai-suggest
+```
+
+See [SETUP_AI.md](SETUP_AI.md) for quick setup and [AI_INTEGRATION_GUIDE.md](AI_INTEGRATION_GUIDE.md) for complete documentation.
 
 3) ESLint plugin
 
