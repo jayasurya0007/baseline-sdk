@@ -7,23 +7,7 @@ export interface ScanIssue { kind: 'js' | 'css'; featureId: string; message: str
 
 export interface ScanResult { issues: ScanIssue[]; }
 
-export interface ScanOptions { 
-  target: BaselineLevel;
-  aiSuggestions?: boolean;
-  aiApiKey?: string;
-}
-
-export interface AIFixSuggestion {
-  originalCode: string;
-  suggestedCode: string;
-  explanation: string;
-  confidence: 'high' | 'medium' | 'low';
-  featureId: string;
-}
-
-export interface ScanIssueWithSuggestion extends ScanIssue {
-  aiSuggestion?: AIFixSuggestion;
-}
+export interface ScanOptions { target: BaselineLevel; }
 
 export interface BaselineDataSource {
   getFeatureById(id: string): FeatureRecord | undefined;
